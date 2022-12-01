@@ -19,6 +19,12 @@ NOTE: this is lifted from [yesqa](https://github.com/asottile/yesqa), whose lice
 pip install pylint-reenable
 ```
 
+## Command-line example
+
+```console
+$ pylint-reenable my_file.py
+```
+
 ## As a pre-commit hook
 
 See [pre-commit](https://github.com/pre-commit/pre-commit) for instructions
@@ -27,7 +33,7 @@ Sample `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/MarcoGorelli/pylint-reenable
-    rev: v0.1.1
+    rev: v0.1.0
     hooks:
     -   id: pylint-reenable
 ```
