@@ -15,10 +15,10 @@ import tokenize_rt
 
 Tokens = List[tokenize_rt.Token]
 
-_code = '[a-z-]+'
+_code = r'[a-z-]+(?!\d)'
 _sep = r'[,\s]+'
 NOQA_RE = re.compile(
-    f'# pylint: ?(?:disable|disable-next)=({_code}({_sep}{_code})*)?', re.I,
+    f'# pylint: ?(?:disable|disable-next)=({_code}({_sep}{_code})*)+', re.I,
 )
 SEP_RE = re.compile(_sep)
 
