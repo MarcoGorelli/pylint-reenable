@@ -15,7 +15,9 @@ NOTE: this is lifted from [yesqa](https://github.com/asottile/yesqa), whose lice
 
 ## Installation
 
-Coming soon...
+```
+pip install pylint-reenable
+```
 
 ## As a pre-commit hook
 
