@@ -1,6 +1,6 @@
 -   id: pylint-reenable
     name: Strip unnecessary `pylint disable`s
     description: Automatically remove unnecessary `pylint disable` comments
-    entry: pylint_reenable
+    entry: pylint-reenable
     language: python
     types: [python]
