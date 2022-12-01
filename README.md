@@ -1,6 +1,7 @@
-[![Build Status](https://dev.azure.com/MarcoGorelli/MarcoGorelli/_apis/build/status/MarcoGorelli.pylint-reenable?branchName=main)](https://dev.azure.com/MarcoGorelli/MarcoGorelli/_build/latest?definitionId=53&branchName=main)
-[![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/MarcoGorelli/MarcoGorelli/53/main.svg)](https://dev.azure.com/MarcoGorelli/MarcoGorelli/_build/latest?definitionId=53&branchName=main)
+[![Build Status](https://github.com/MarcoGorelli/pylint-reenable/workflows/tox/badge.svg)](https://github.com/MarcoGorelli/auto-walrus/actions?workflow=tox)
+[![Coverage](https://codecov.io/gh/MarcoGorelli/auto-walrus/branch/main/graph/badge.svg)](https://codecov.io/gh/MarcoGorelli/auto-walrus)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/MarcoGorelli/pylint-reenable/main.svg)](https://results.pre-commit.ci/latest/github/MarcoGorelli/pylint-reenable/main)
+
 
 pylint-reenable
 ===============

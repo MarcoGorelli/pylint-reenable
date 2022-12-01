@@ -15,14 +15,15 @@ import tokenize_rt
 
 Tokens = List[tokenize_rt.Token]
 
-NOQA_FILE_RE = re.compile(r'^# flake8[:=]\s*noqa', re.I)
 _code = '[a-z-]+'
 _sep = r'[,\s]+'
-NOQA_RE = re.compile(f'# pylint: ?(?:disable|disable-next)=({_code}({_sep}{_code})*)?', re.I)
+NOQA_RE = re.compile(
+    f'# pylint: ?(?:disable|disable-next)=({_code}({_sep}{_code})*)?', re.I,
+)
 SEP_RE = re.compile(_sep)
 
 
-def _run_flake8(filename: str) -> dict[int, set[str]]:
+def _run_pylint(filename: str) -> dict[int, set[str]]:
     cmd = (
         sys.executable,
         '-mpylint',
@@ -32,7 +33,12 @@ def _run_flake8(filename: str) -> dict[int, set[str]]:
     out, _ = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
     ret: dict[int, set[str]] = collections.defaultdict(set)
     for line in out.decode().splitlines():
-        if line.startswith('*') or line.startswith('-') or line.startswith('Your code') or not line:
+        if (
+            line.startswith('*')
+            or line.startswith('-')
+            or line.startswith('Your code')
+            or not line
+        ):
             continue
         lineno, code = line.split('\t')
         ret[int(lineno)].add(code)
@@ -41,7 +47,7 @@ def _run_flake8(filename: str) -> dict[int, set[str]]:
 
 def _remove_comment(tokens: Tokens, i: int) -> None:
     if i > 0 and tokens[i - 1].name == tokenize_rt.UNIMPORTANT_WS:
-        del tokens[i - 1:i + 1]
+        del tokens[i - 1: i + 1]
     else:
         del tokens[i]
 
@@ -52,8 +58,6 @@ def _remove_comments(tokens: Tokens) -> Tokens:
         if token.name == 'COMMENT':
             if NOQA_RE.search(token.src):
                 _mask_noqa_comment(tokens, i)
-            elif NOQA_FILE_RE.search(token.src):
-                _remove_comment(tokens, i)
     return tokens
 
 
@@ -70,10 +74,10 @@ def _mask_noqa_comment(tokens: Tokens, i: int) -> None:
 
 
 def _rewrite_noqa_comment(
-        tokens: Tokens,
-        i: int,
-        flake8_results: dict[int, set[str]],
-        lints = None,
+    tokens: Tokens,
+    i: int,
+    flake8_results: dict[int, set[str]],
+    lints: set[str] | None = None,
 ) -> None:
     # find logical lines that this noqa comment may affect
     lines: set[int] = set()
@@ -91,7 +95,7 @@ def _rewrite_noqa_comment(
         lints = set()
         for line in lines:
             if disable_next:
-                lints.update(flake8_results[line+1])
+                lints.update(flake8_results[line + 1])
             else:
                 lints.update(flake8_results[line])
 
@@ -104,23 +108,27 @@ def _rewrite_noqa_comment(
             _remove_comment(tokens, i)
         else:
             src = NOQA_RE.sub('', token.src).strip()
-            if not src.startswith('#'):
-                src = f'# {src}'
             tokens[i] = token._replace(src=src)
 
     # exclude all lints on the line but no lints
     if not lints:
         _remove_noqa()
-    elif match.group().lower() != '# pylint':
+    else:
         codes = set(SEP_RE.split(match.group(1)))
         expected_codes = codes & lints
         if not expected_codes:
             _remove_noqa()
-        elif expected_codes != codes:
+        else:
             if disable_next:
-                comment = f'# pylint: disable-next={", ".join(sorted(expected_codes))}'
+                comment = (
+                    '# pylint: disable-next='
+                    f'{", ".join(sorted(expected_codes))}'
+                )
             else:
-                comment = f'# pylint: disable={", ".join(sorted(expected_codes))}'
+                comment = (
+                    '# pylint: disable='
+                    f'{", ".join(sorted(expected_codes))}'
+                )
             tokens[i] = token._replace(src=NOQA_RE.sub(comment, token.src))
 
 
@@ -133,7 +141,7 @@ def fix_file(filename: str) -> int:
     except UnicodeDecodeError:
         print(f'{filename} is non-utf8 (not supported)')
         return 1
-    
+
     lines = contents_text.splitlines()
 
     tokens = tokenize_rt.src_to_tokens(contents_text)
@@ -152,11 +160,11 @@ def fix_file(filename: str) -> int:
     try:
         with open(fd, 'wb') as f:
             f.write(src_no_comments.encode())
-        flake8_results = _run_flake8(path)
+        pylint_results = _run_pylint(path)
     finally:
         os.remove(path)
 
-    if any('E0001' in v for v in flake8_results.values()):
+    if any('syntax-error' in v for v in pylint_results.values()):
         print(f'{filename}: syntax error (skipping)')
         return 0
 
@@ -164,20 +172,20 @@ def fix_file(filename: str) -> int:
         if token.name != 'COMMENT':
             continue
         # check if it's a global disable
-        if re.match(r'^# pylint: ?disable=', lines[token.line-1]):
-            lints = {i for (key, val) in flake8_results.items() for i in val if key >= token.line}
-            _rewrite_noqa_comment(tokens, i, flake8_results, lints)
-        if re.match(r'^# pylint: ?disable=', lines[token.line-1].lstrip()):
+        if re.match(r'^# pylint: ?disable=', lines[token.line - 1]):
+            lints = {
+                i
+                for (key, val) in pylint_results.items()
+                for i in val
+                if key >= token.line
+            }
+            _rewrite_noqa_comment(tokens, i, pylint_results, lints)
+        if re.match(r'^# pylint: ?disable=', lines[token.line - 1].lstrip()):
             # if a whole block is being ignored, then don't rewrite
             continue
 
         if NOQA_RE.search(token.src):
-            _rewrite_noqa_comment(tokens, i, flake8_results)
-        elif NOQA_FILE_RE.match(token.src) and not flake8_results:
-            if i == 0 or tokens[i - 1].name == 'NEWLINE':
-                del tokens[i: i + 2]
-            else:
-                _remove_comment(tokens, i)
+            _rewrite_noqa_comment(tokens, i, pylint_results)
 
     newsrc = tokenize_rt.tokens_to_src(tokens)
     if newsrc != contents_text:
