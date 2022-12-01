@@ -118,7 +118,7 @@ def _rewrite_noqa_comment(
         expected_codes = codes & lints
         if not expected_codes:
             _remove_noqa()
-        else:
+        elif expected_codes != codes:
             if disable_next:
                 comment = (
                     '# pylint: disable-next='
