@@ -70,6 +70,10 @@ def test_ok(assert_rewrite, src):
             'import os  # pylint: disable=unused-import\n',
         ),
         (
+            'import os  # pylint:disable=all,foobar\n',
+            'import os  # pylint: disable=all\n',
+        ),
+        (
             '# foo # pylint:disable-next=redefined-outer-name\nx = 1\n',
             '# foo\nx = 1\n',
         ),
@@ -105,7 +109,9 @@ def test_ok(assert_rewrite, src):
             id='multi-character noqa code',
         ),
         (
-            'if True:\n' '    # pylint: disable-next=all\n' '    pass\n',
+            'if True:\n'
+            '    # pylint: disable-next=invalid-name\n'
+            '    pass\n',
             'if True:\n' '\n' '    pass\n',
         ),
         (
@@ -114,9 +120,9 @@ def test_ok(assert_rewrite, src):
             '    x=1\n',
             'if True:  # pylint: disable-next=invalid-name\n' '    x=1\n',
         ),
-        ('# pylint: disable-next=all\nx = 1\n', '\nx = 1\n'),
+        ('# pylint: disable-next=unused-import\nx = 1\n', '\nx = 1\n'),
         # file comments
-        ('# pylint: disable=all\nx = 1\n', '\nx = 1\n'),
+        ('# pylint: disable=unused-import\nx = 1\n', '\nx = 1\n'),
         ('x = 1  # pylint: disable=red\n', 'x = 1\n'),
     ),
 )

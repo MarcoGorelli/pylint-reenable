@@ -115,7 +115,10 @@ def _rewrite_noqa_comment(
         _remove_noqa()
     else:
         codes = set(SEP_RE.split(match.group(1)))
-        expected_codes = codes & lints
+        if 'all' in codes:
+            expected_codes = {'all'}
+        else:
+            expected_codes = codes & lints
         if not expected_codes:
             _remove_noqa()
         elif expected_codes != codes:
